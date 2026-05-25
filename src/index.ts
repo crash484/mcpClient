@@ -1,3 +1,4 @@
+//this contains the mcp client class
 import { Anthropic } from "@anthropic-ai/sdk";
 import type { MessageParam, Tool } from "@anthropic-ai/sdk/resources/messages/index.js";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
