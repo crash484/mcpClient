@@ -27,7 +27,7 @@ function isHttpUrl(target: string): boolean {
   }
 }
 
-class MCPClient {
+export class MCPClient {
     private mcp: Client;
     private anthropic: Anthropic;
     private transport: Transport | null = null;
@@ -135,7 +135,7 @@ class MCPClient {
       
             messages.push({
               role: "user",
-              content: result.content as string,
+              content: result.content as MessageParam["content"],
             });
       
             const response = await this.anthropic.messages.create({
