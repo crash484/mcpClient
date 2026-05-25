@@ -10,5 +10,9 @@ app.listen(3000,()=>{
 
 app.get("/", (req, res) => {
     //here we will serve the frontend using express
-    res.sendFile(path.join(__dirname, "..", "frontend", "index.html"));
+    res.sendFile("C:\Users\ShashwatJain\mcp\mcpClient\index.html");
 });
+
+//the intended flow is that, after accessing the frontend, 
+// the mcp class will be initialized and the chatLoop will be called,
+//  and the response will be displayed on the frontend but 
