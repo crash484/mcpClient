@@ -1,0 +1,24 @@
+.main-header {
+    text-align: center;
+    padding: 1rem;
+    margin-bottom: 2rem;
+}
+
+.main-header h1 {
+    color: #FCCC0A;
+    font-size: 3rem;
+}
+
+.main-header p {
+    color: #AAAAAA;
+}
+
+.stChatMessage {
+    border-radius: 12px;
+    padding: 10px;
+}
+
+[data-testid="stChatMessageContent"] {
+    font-size: 16px;
+    line-height: 1.6;
+}
