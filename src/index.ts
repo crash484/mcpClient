@@ -101,6 +101,7 @@ export class MCPClient {
           }
     }
 
+
     async processQuery(query: string) {
         const messages: MessageParam[] = [
           {
@@ -112,12 +113,51 @@ export class MCPClient {
         const response = await this.anthropic.messages.create({
           model: "claude-haiku-4-5-20251001",
           max_tokens: 1000,
+          system: "You are a helpful, friendly assistant. Respond in a conversational and warm tone — like a knowledgeable friend, not a robotic assistant. Be concise but thorough, and always aim to actually solve the user's problem.",
           messages,
           tools: this.tools,
         });
-      
+       console.log(response); /*==>
+          {
+            model: 'claude-haiku-4-5-20251001',
+            id: 'msg_015d9A83bw8soMcr7bxE2svu',
+            type: 'message',
+            role: 'assistant',
+            content: [
+              {
+                type: 'text',
+                text: "I can show you one of the available tools. Here's an example of a useful one:\n" +
+                  '\n' +
+                  '**`mta_get_arrivals`** - Get upcoming train arrivals at a subway station\n' +
+                  '\n' +
+                  'This tool lets you check when the next trains are arriving at any NYC subway station. You can:\n' +
+                  '- Specify a station by name or ID (e.g., "Times Square", "Grand Central", "14th Street")\n' +
+                  '- Filter by a specific subway line (e.g., "1", "A", "F")\n' +
+                  '- Filter by direction (N for uptown/Bronx-bound, S for downtown/Brooklyn-bound)\n' +
+                  '- Set how many upcoming arrivals to see (up to 100)\n' +
+                  '\n' +
+                  '**Example usage:** If you asked "When is the next train at Times Square?", I could use this tool to show you the upcoming arrivals for all lines at that station.\n' +
+                  '\n' +
+                  'Would you like me to use this tool to check train arrivals somewhere, or would you like to see a different tool?'        
+              }
+            ],
+            stop_reason: 'end_turn',
+            stop_sequence: null,
+            stop_details: null,
+            usage: {
+              input_tokens: 4967,
+              cache_creation_input_tokens: 0,
+              cache_read_input_tokens: 0,
+              cache_creation: { ephemeral_5m_input_tokens: 0, ephemeral_1h_input_tokens: 0 },
+              output_tokens: 220,
+              service_tier: 'standard',
+              inference_geo: 'not_available'
+            }
+          }
+       ; */ 
         const finalText = [];
       
+        //to take only the usefull response
         for (const content of response.content) {
           if (content.type === "text") {
             finalText.push(content.text);
@@ -147,12 +187,15 @@ export class MCPClient {
             finalText.push(
               response.content[0].type === "text" ? response.content[0].text : ""
             );
+
           }
         }
-      
-        return finalText.join("\n");
+        const formatted =  await formatResponse(finalText);
+        console.log(formatted)
+        if(formatted) return formatted;
       }
 
+      //important only for cli
       async chatLoop() {
         const rl = readline.createInterface({
           input: process.stdin,
@@ -181,6 +224,7 @@ export class MCPClient {
       }
 }
 
+
 async function main() {
     if (process.argv.length < 3) {
       console.log("Usage: node build/index.js <server_url_or_script>");
@@ -201,5 +245,56 @@ async function main() {
       process.exit(0);
     }
   }
+
+  //to do
+  //1. intialize and place llm so ur talking llm
+  //2. takes query and uses same processQuery function
+  // treat processQuery only for the mcpclient feature, basically im giving the mcp client which is another llm basically?
+  //3?. but when model is being is called
   
   main();
+
+
+  //format function
+  function formatResponse(parts: string[]): string {
+    const text = parts.join("\n");
+  
+    const toolRegex = /\*\*`(.+?)`\*\*\s*-\s*([^\n*-][^\n*]*)/g;
+    const tools: { name: string; desc: string }[] = [];
+    let match;
+    while ((match = toolRegex.exec(text)) !== null) {
+      tools.push({ name: match[1], desc: match[2].trim() });
+    }
+  
+    const exampleRegex = /- "(.+?)"/g;
+    const examples: string[] = [];
+    let exMatch;
+    while ((exMatch = exampleRegex.exec(text)) !== null) {
+      examples.push(exMatch[1]);
+    }
+  
+    const intro = text.match(/^(.+?)(?=\*\*`)/s)?.[1]?.trim() ?? '';
+    const outro = text.match(/(?:Did you|Would you|Can I).+\?$/)?.[0]?.trim() ?? '';
+  
+    // if no markdown patterns found, return plain text as-is
+    if (tools.length === 0 && examples.length === 0) {
+      return text.trim();
+    }
+  
+    const lines: string[] = [];
+  
+    if (intro) lines.push(intro);
+  
+    tools.forEach((tool, i) => {
+      lines.push(`\n🔧 ${tool.name}`);
+      lines.push(`   ${tool.desc}`);
+      if (i === 0 && examples.length > 0) {
+        lines.push(`\n   Examples:`);
+        examples.forEach(ex => lines.push(`   • "${ex}"`));
+      }
+    });
+  
+    if (outro) lines.push(`\n${outro}`);
+  
+    return lines.join("\n");
+  }
